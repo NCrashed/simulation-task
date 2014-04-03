@@ -2,7 +2,6 @@ module Stand(
     Stand(..)
   , standOne
   , standTwo
-  , runStand
   ) where
 
 import Computer
@@ -12,18 +11,28 @@ import Simulation.Aivika.Dynamics
 import Simulation.Aivika.Simulation
 import Simulation.Aivika.Process
 import Simulation.Aivika.Queue
+import Simulation.Aivika.Ref
 import Control.Monad (forever)
+import Simulation.Aivika.Event (liftEvent)
      
-data Stand = Stand (FCFSQueue Computer) (Computer -> Dynamics Double) (Process ()) 
+data Stand = Stand
+  -- | Очередь стенда 
+  (FCFSQueue Computer) 
+  -- | Общее время работы
+  (Ref Double) 
+  -- | Обработчик стенда
+  (Process ()) 
 
 stand :: (Computer -> Dynamics Double) -> Simulation Stand
 stand distr = do
   queue <- newFCFSQueue 100 
-  return $ Stand queue distr $ forever $ do
+  workTimeRef <- newRef 0.0
+  return $ Stand queue workTimeRef $ forever $ do
     comp <- dequeue queue
     repairTime <- liftDynamics $ distr comp
     holdProcess repairTime
-
+    liftEvent $ modifyRef workTimeRef (+ repairTime)
+    
 standOne :: Simulation Stand
 standOne =
   stand $ \comp -> case comp of
@@ -35,8 +44,3 @@ standTwo =
   stand $ \comp -> case comp of
     ComputerType1 ->  undefined
     ComputerType2 -> liftIO $ exprnd (1.0 / 6.0)
-     
-runStand :: Stand -> Simulation ()
-runStand (Stand _ _ func) = do
-  pid <- newProcessId
-  runProcessInStartTimeUsingId pid func 
