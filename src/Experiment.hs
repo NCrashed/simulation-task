@@ -25,8 +25,8 @@ experiment =
   , experimentGenerators = 
       [ outputView defaultExperimentSpecsView
       , outputView $ defaultTimeSeriesView 
-        { timeSeriesTitle = "Total uptime"
-        , timeSeries = [Left "ut"]
+        { timeSeriesTitle = "Stand queues sizes"
+        , timeSeries = [Left "q1", Left "q2"]
         }
       ]
   }
