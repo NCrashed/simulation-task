@@ -8,6 +8,7 @@ import Stand
 import Controller
 import Fixer
 import Packer
+import Transporter
 
 import Simulation.Aivika.Dynamics
 import Simulation.Aivika.Simulation
@@ -20,7 +21,8 @@ import Simulation.Aivika.Queue
 
 model :: Simulation ExperimentData
 model = do
-  transportQueue <- newFCFSQueue 10
+  storeQueue <- newFCFSQueue 100
+  (Transporter transportQueue transportWorkRef transportFunc) <- transporter storeQueue
   (Packer packQueue packWorkRef _ packFunc) <- packer transportQueue 12
   (Fixer  fixQueue fixWorkRef fixFunc) <- fixer packQueue
   stationQueue <- newFCFSQueue 200 
@@ -35,7 +37,8 @@ model = do
                               , contr1Func
                               , contr2Func
                               , fixFunc
-                              , packFunc ] 
+                              , packFunc
+                              , transportFunc ] 
                               
   let getLoadFactor :: Ref Double -> Dynamics Double
       getLoadFactor ref = do
@@ -57,9 +60,11 @@ model = do
         
   experimentDataInStartTime $
     [ ("t", seriesEntity "Модельное время" time) ] ++
+
     genQueueExperimentData "q1" "Стенда1" queueOne ++ 
-    genQueueExperimentData "q2" "Стенда2" queueTwo ++ 
     genExperimentLoadData  "q1" "Стенда1" workRef1 ++
+
+    genQueueExperimentData "q2" "Стенда2" queueTwo ++ 
     genExperimentLoadData  "q2" "Стенда2" workRef2 ++
     
     genQueueExperimentData "cq" "Станции" stationQueue ++
@@ -67,8 +72,12 @@ model = do
     genExperimentLoadData  "cq2" "Контроллера2" contrWorkRef2 ++
     
     genQueueExperimentData "fq" "Наладчика" fixQueue ++
-    genQueueExperimentData "pq" "Упаковщика" packQueue ++
     genExperimentLoadData  "fq" "Наладчика" fixWorkRef ++
+    
+    genQueueExperimentData "pq" "Упаковщика" packQueue ++
     genExperimentLoadData  "pq" "Упаковщика" packWorkRef ++
     
-    genQueueExperimentData "tq" "Транспортера" transportQueue
+    genQueueExperimentData "tq" "Транспортера" transportQueue ++
+    genExperimentLoadData  "tq" "Транспортера" transportWorkRef ++
+    
+    genQueueExperimentData "sq" "Склада" storeQueue

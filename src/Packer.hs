@@ -1,6 +1,7 @@
 {-# LANGUAGE DoAndIfThenElse #-}
 module Packer(
     Packer(..)
+  , Palete(..)
   , packer
   ) where
 

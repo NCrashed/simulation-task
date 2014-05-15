@@ -61,9 +61,11 @@ experiment =
       genQueueStatistics' "cq" "Станции" ++
       genQueueStatistics  "fq" "Наладчика" ++
       genQueueStatistics  "pq" "Упаковщика" ++
+      genQueueStatistics  "tq" "Транспортера" ++
       genQueueGraphics ["q1", "q2"] "График состояния очередей стендов" "StandState" ++
       genQueueGraphics ["cq"] "График состояния очереди станции" "StationState" ++
       genQueueGraphics ["fq"] "График состояния очереди наладчика" "FixState" ++
       genQueueGraphics ["pq"] "График состояния очереди упаковщика" "PackState" ++
-      genQueueGraphics ["tq"] "График состояния очереди транспортера" "TransportState"
+      genQueueGraphics ["tq"] "График состояния очереди транспортера" "TransportState" ++
+      genQueueGraphics ["sq"] "График состояния очереди склада" "StoreState"
   }
