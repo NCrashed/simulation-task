@@ -23,24 +23,25 @@ data Stand = Stand
   -- | Обработчик стенда
   (Process ()) 
 
-stand :: (Computer -> Dynamics Double) -> Simulation Stand
-stand distr = do
+stand :: FCFSQueue Computer -> (Computer -> Dynamics Double) -> Simulation Stand
+stand station distr = do
   queue <- newFCFSQueue 100 
   workTimeRef <- newRef 0.0
   return $ Stand queue workTimeRef $ forever $ do
     comp <- dequeue queue
     repairTime <- liftDynamics $ distr comp
     holdProcess repairTime
+    enqueue station comp
     liftEvent $ modifyRef workTimeRef (+ repairTime)
     
-standOne :: Simulation Stand
-standOne =
-  stand $ \comp -> case comp of
+standOne :: FCFSQueue Computer -> Simulation Stand
+standOne station =
+  stand station $ \comp -> case comp of
     ComputerType1 -> liftIO $ exprnd (1.0 / 7.0)
     ComputerType2 -> liftIO $ exprnd (1.0 / 10.0)
 
-standTwo :: Simulation Stand
-standTwo =
-  stand $ \comp -> case comp of
+standTwo :: FCFSQueue Computer -> Simulation Stand
+standTwo station =
+  stand station $ \comp -> case comp of
     ComputerType1 ->  undefined
     ComputerType2 -> liftIO $ exprnd (1.0 / 6.0)

@@ -5,6 +5,7 @@ module Model(
 
 import Computer
 import Stand
+import Controller
 
 import Simulation.Aivika.Dynamics
 import Simulation.Aivika.Simulation
@@ -17,29 +18,48 @@ import Simulation.Aivika.Queue
 
 model :: Simulation ExperimentData
 model = do
-  (Stand queueOne workRef1 stand1Func) <- standOne
-  (Stand queueTwo workRef2 stand2Func) <- standTwo
+  stationQueue <- newFCFSQueue 200 
+  fixQueue     <- newFCFSQueue 200
+  packQueue    <- newFCFSQueue 200
+  
+  (Controller contrWorkRef1 contr1Func) <- controller fixQueue packQueue stationQueue
+  (Controller contrWorkRef2 contr2Func) <- controller fixQueue packQueue stationQueue
+  (Stand queueOne workRef1 stand1Func) <- standOne stationQueue
+  (Stand queueTwo workRef2 stand2Func) <- standTwo stationQueue
   
   runProcessInStartTime $ computerStream queueOne queueTwo
-  runProcessInStartTime stand1Func
-  runProcessInStartTime stand2Func 
-  
+  mapM_ runProcessInStartTime [ stand1Func
+                              , stand2Func
+                              , contr1Func
+                              , contr2Func ] 
+                              
   let getLoadFactor :: Ref Double -> Dynamics Double
       getLoadFactor ref = do
         workTime <- runEvent $ readRef ref
         start <- liftParameter starttime
         end <- liftParameter stoptime
         return (workTime / (end - start)) 
+  
+  let genQueueExperimentData :: String -> String -> FCFSQueue Computer -> [(String, SeriesEntity)]
+      genQueueExperimentData prefix descrPostfix queue = 
+        [ (prefix, seriesEntity ("Размер очереди " ++ descrPostfix) (runEvent $ queueCount queue))
+        , (prefix ++ "_wait", seriesEntity ("Время ожидания в очереди " ++ descrPostfix) (runEvent $ queueWaitTime queue))
+        , (prefix ++ "_extracted", seriesEntity ("Кол-во обработанных компьютеров " ++ descrPostfix) (runEvent $ dequeueExtractCount queue))  
+        , (prefix ++ "_rate", seriesEntity ("Скорость пополнения очереди " ++ descrPostfix) (runEvent $ enqueueRate queue))]
+  
+  let genExperimentLoadData :: String -> String -> Ref Double -> [(String, SeriesEntity)]
+      genExperimentLoadData prefix descPostfix ref = 
+        [(prefix ++ "_load", seriesEntity ("Коэффициент загрузки " ++ descPostfix) (getLoadFactor ref))]
         
-  experimentDataInStartTime 
-    [ ("t", seriesEntity "Модельное время" time)
-    , ("q1", seriesEntity "Размер очереди Стенда1" (runEvent $ queueCount queueOne))
-    , ("q2", seriesEntity "Размер очереди Стенда2" (runEvent $ queueCount queueTwo))
-    , ("q1_wait", seriesEntity "Время ожидания в очереди" (runEvent $ queueWaitTime queueOne))
-    , ("q2_wait", seriesEntity "Время ожидания в очереди" (runEvent $ queueWaitTime queueTwo))
-    , ("q1_extracted", seriesEntity "Кол-во обработанных компьютеров" (runEvent $ dequeueExtractCount queueOne))  
-    , ("q2_extracted", seriesEntity "Кол-во обработанных компьютеров" (runEvent $ dequeueExtractCount queueTwo))
-    , ("q1_rate", seriesEntity "Скорость пополнения" (runEvent $ enqueueRate queueOne))
-    , ("q2_rate", seriesEntity "Скорость пополнения" (runEvent $ enqueueRate queueTwo))
-    , ("q1_load", seriesEntity "Коэффициент загрузки" (getLoadFactor workRef1))
-    , ("q2_load", seriesEntity "Коэффициент загрузки" (getLoadFactor workRef2))]  
+  experimentDataInStartTime $
+    [ ("t", seriesEntity "Модельное время" time) ] ++
+    genQueueExperimentData "q1" "Стенда1" queueOne ++ 
+    genQueueExperimentData "q2" "Стенда2" queueTwo ++ 
+    genExperimentLoadData  "q1" "Стенда1" workRef1 ++
+    genExperimentLoadData  "q2" "Стенда2" workRef2 ++
+    genQueueExperimentData "cq" "Станции" stationQueue ++
+    genExperimentLoadData  "cq1" "Контроллера1" contrWorkRef1 ++
+    genExperimentLoadData  "cq2" "Контроллера2" contrWorkRef2 ++
+    genQueueExperimentData "fq" "Наладчика" fixQueue ++
+    genQueueExperimentData "pq" "Упаковщика" packQueue 
+    
