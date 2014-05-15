@@ -13,6 +13,7 @@ import Simulation.Aivika.Queue
 import Simulation.Aivika.Ref
 import Control.Monad (forever)
 import Simulation.Aivika.Event (liftEvent)
+import Debug.Trace (trace)
      
 data Controller = Controller
   -- | Общее время работы
@@ -28,6 +29,6 @@ controller fixQueue packQueue stationQueue = do
     checkTime <- liftIO $ uniform 6 12
     holdProcess checkTime
     randomChoice 0.85
-      (enqueue packQueue comp)
+      (trace "pushed to pack!" $ enqueue packQueue comp)
       (enqueue fixQueue comp) 
     liftEvent $ modifyRef workTimeRef (+ checkTime)

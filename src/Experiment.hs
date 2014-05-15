@@ -11,7 +11,7 @@ import Data.Functor ((<$>))
 
 specs :: Specs
 specs = Specs { spcStartTime = 0.0, 
-                spcStopTime = 100.0,
+                spcStopTime = 200.0,
                 spcDT = 1.0,
                 spcMethod = RungeKutta4,
                 spcGeneratorType = SimpleGenerator }
@@ -59,10 +59,11 @@ experiment =
       genQueueStatistics  "q1" "Стенда1" ++
       genQueueStatistics  "q2" "Стенда2" ++
       genQueueStatistics' "cq" "Станции" ++
-      --genQueueStatistics "fq" "Наладчика" ++
-      --genQueueStatistics "pq" "Упаковщика" ++
+      genQueueStatistics  "fq" "Наладчика" ++
+      genQueueStatistics  "pq" "Упаковщика" ++
       genQueueGraphics ["q1", "q2"] "График состояния очередей стендов" "StandState" ++
       genQueueGraphics ["cq"] "График состояния очереди станции" "StationState" ++
       genQueueGraphics ["fq"] "График состояния очереди наладчика" "FixState" ++
-      genQueueGraphics ["pq"] "График состояния очереди упаковщика" "PackState"
+      genQueueGraphics ["pq"] "График состояния очереди упаковщика" "PackState" ++
+      genQueueGraphics ["tq"] "График состояния очереди транспортера" "TransportState"
   }

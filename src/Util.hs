@@ -2,6 +2,7 @@ module Util(
     stdDistr
   , exprnd
   , uniform
+  , uniform'
   , randomChoice
   ) where
   
@@ -24,8 +25,11 @@ uniform a b
     x <- stdDistr
     return $ x * (b - a) + a
     
+uniform' :: Double -> Double -> IO Double
+uniform' a b = uniform (a-b) (a+b)
+
 randomChoice :: MonadIO m => Double -> m a -> m a -> m a
 randomChoice chance thenAction elseAction = do
   x <- liftIO stdDistr
-  if x > chance then thenAction else elseAction
+  if x <= chance then thenAction else elseAction
   

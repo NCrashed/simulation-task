@@ -6,6 +6,8 @@ module Model(
 import Computer
 import Stand
 import Controller
+import Fixer
+import Packer
 
 import Simulation.Aivika.Dynamics
 import Simulation.Aivika.Simulation
@@ -18,10 +20,10 @@ import Simulation.Aivika.Queue
 
 model :: Simulation ExperimentData
 model = do
+  transportQueue <- newFCFSQueue 10
+  (Packer packQueue packWorkRef _ packFunc) <- packer transportQueue 12
+  (Fixer  fixQueue fixWorkRef fixFunc) <- fixer packQueue
   stationQueue <- newFCFSQueue 200 
-  fixQueue     <- newFCFSQueue 200
-  packQueue    <- newFCFSQueue 200
-  
   (Controller contrWorkRef1 contr1Func) <- controller fixQueue packQueue stationQueue
   (Controller contrWorkRef2 contr2Func) <- controller fixQueue packQueue stationQueue
   (Stand queueOne workRef1 stand1Func) <- standOne stationQueue
@@ -31,7 +33,9 @@ model = do
   mapM_ runProcessInStartTime [ stand1Func
                               , stand2Func
                               , contr1Func
-                              , contr2Func ] 
+                              , contr2Func
+                              , fixFunc
+                              , packFunc ] 
                               
   let getLoadFactor :: Ref Double -> Dynamics Double
       getLoadFactor ref = do
@@ -40,7 +44,7 @@ model = do
         end <- liftParameter stoptime
         return (workTime / (end - start)) 
   
-  let genQueueExperimentData :: String -> String -> FCFSQueue Computer -> [(String, SeriesEntity)]
+  let genQueueExperimentData :: String -> String -> FCFSQueue a -> [(String, SeriesEntity)]
       genQueueExperimentData prefix descrPostfix queue = 
         [ (prefix, seriesEntity ("Размер очереди " ++ descrPostfix) (runEvent $ queueCount queue))
         , (prefix ++ "_wait", seriesEntity ("Время ожидания в очереди " ++ descrPostfix) (runEvent $ queueWaitTime queue))
@@ -57,9 +61,14 @@ model = do
     genQueueExperimentData "q2" "Стенда2" queueTwo ++ 
     genExperimentLoadData  "q1" "Стенда1" workRef1 ++
     genExperimentLoadData  "q2" "Стенда2" workRef2 ++
+    
     genQueueExperimentData "cq" "Станции" stationQueue ++
     genExperimentLoadData  "cq1" "Контроллера1" contrWorkRef1 ++
     genExperimentLoadData  "cq2" "Контроллера2" contrWorkRef2 ++
-    genQueueExperimentData "fq" "Наладчика" fixQueue ++
-    genQueueExperimentData "pq" "Упаковщика" packQueue 
     
+    genQueueExperimentData "fq" "Наладчика" fixQueue ++
+    genQueueExperimentData "pq" "Упаковщика" packQueue ++
+    genExperimentLoadData  "fq" "Наладчика" fixWorkRef ++
+    genExperimentLoadData  "pq" "Упаковщика" packWorkRef ++
+    
+    genQueueExperimentData "tq" "Транспортера" transportQueue
