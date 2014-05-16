@@ -5,6 +5,7 @@ module Transporter(
 
 import Packer
 import Util
+import Parameters
 import Control.Monad.Trans
 
 import Simulation.Aivika.Simulation
@@ -28,7 +29,7 @@ transporter storeQueue = do
   workTimeRef <- newRef 0.0
   return $ Transporter queue workTimeRef $ forever $ do
     palete <- dequeue queue
-    transportTime <- liftIO $ uniform' 16 4
+    transportTime <- liftIO $ uncurry uniform' transportTimeDistr
     holdProcess transportTime
     enqueue storeQueue palete
     liftEvent $ modifyRef workTimeRef (+ transportTime)

@@ -5,6 +5,7 @@ module Fixer(
 
 import Computer
 import Util
+import Parameters
 import Control.Monad.Trans
 
 import Simulation.Aivika.Simulation
@@ -28,7 +29,7 @@ fixer packQueue = do
   workTimeRef <- newRef 0.0
   return $ Fixer queue workTimeRef $ forever $ do
     comp <- dequeue queue
-    fixTime <- liftIO $ uniform 20 40
+    fixTime <- liftIO $ uncurry uniform fixTimeDist
     holdProcess fixTime
     enqueue packQueue comp
     liftEvent $ modifyRef workTimeRef (+ fixTime)

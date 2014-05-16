@@ -5,6 +5,7 @@ module Computer(
   ) where
   
 import Util  
+import Parameters
 
 import Simulation.Aivika.Process
 import Simulation.Aivika.Event
@@ -16,11 +17,11 @@ data Computer = ComputerType1 | ComputerType2
 generateComputer :: IO Computer
 generateComputer = do
   x <- stdDistr
-  return (if x <= 0.7 then ComputerType1 else ComputerType2)
+  return (if x <= computer1Rate then ComputerType1 else ComputerType2)
 
 computerStream :: FCFSQueue Computer -> FCFSQueue Computer -> Process ()
 computerStream qstand1 qstand2 = do
-  genTime <- liftIO $ exprnd 0.5
+  genTime <- liftIO $ exprnd computerGeneratorIntense
   holdProcess genTime
   comp <- liftIO generateComputer 
   isStand2Free <- liftEvent $ queueNull qstand2 

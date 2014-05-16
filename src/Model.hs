@@ -9,6 +9,7 @@ import Controller
 import Fixer
 import Packer
 import Transporter
+import Parameters
 
 import Simulation.Aivika.Dynamics
 import Simulation.Aivika.Simulation
@@ -23,7 +24,7 @@ model :: Simulation ExperimentData
 model = do
   storeQueue <- newFCFSQueue 100
   (Transporter transportQueue transportWorkRef transportFunc) <- transporter storeQueue
-  (Packer packQueue packWorkRef _ packFunc) <- packer transportQueue 12
+  (Packer packQueue packWorkRef _ packFunc) <- packer transportQueue
   (Fixer  fixQueue fixWorkRef fixFunc) <- fixer packQueue
   stationQueue <- newFCFSQueue 200 
   (Controller contrWorkRef1 contr1Func) <- controller fixQueue packQueue stationQueue
@@ -57,6 +58,8 @@ model = do
   let genExperimentLoadData :: String -> String -> Ref Double -> [(String, SeriesEntity)]
       genExperimentLoadData prefix descPostfix ref = 
         [(prefix ++ "_load", seriesEntity ("Коэффициент загрузки " ++ descPostfix) (getLoadFactor ref))]
+  
+  let unbox (a, b) = [a, b]
         
   experimentDataInStartTime $
     [ ("t", seriesEntity "Модельное время" time) ] ++
@@ -80,4 +83,17 @@ model = do
     genQueueExperimentData "tq" "Транспортера" transportQueue ++
     genExperimentLoadData  "tq" "Транспортера" transportWorkRef ++
     
-    genQueueExperimentData "sq" "Склада" storeQueue
+    genQueueExperimentData "sq" "Склада" storeQueue ++
+    
+    [ ("computer1Rate", seriesEntity "Доля компьютеров первого вида" (return computer1Rate :: Dynamics Double))
+    , ("computer1Stand1Time", seriesEntity "Время обработки компьютеров первого вида на первом стенде" (return computer1Stand1Time :: Dynamics Double))
+    , ("computer2Stand1Time", seriesEntity "Время обработки компьютеров второго вида на первом стенде" (return computer2Stand1Time :: Dynamics Double))
+    , ("computer2Stand2Time", seriesEntity "Время обработки компьютеров второго вида на втором стенде" (return computer2Stand2Time :: Dynamics Double))
+    , ("computerGeneratorIntense", seriesEntity "Интенсивность потока компьютеров" (return computerGeneratorIntense :: Dynamics Double))
+    , ("controllerTimeDistr", seriesEntity "Распределение времени проверки на контроллере" (return (unbox controllerTimeDistr) :: Dynamics [Double]))
+    , ("controllerSuccessRate", seriesEntity "Вероятность успешного прохождения теста на контроллере" (return controllerSuccessRate :: Dynamics Double))
+    , ("fixTimeDist", seriesEntity "Распределение времени наладки компьютера" (return (unbox fixTimeDist) :: Dynamics [Double]))
+    , ("paleteMaxSize",  seriesEntity "Размер палеты" (return paleteMaxSize :: Dynamics Int))
+    , ("packTimeDistr", seriesEntity "Распределение времени упаковки компьютера" (return (unbox packTimeDistr) :: Dynamics [Double]))
+    , ("transportTimeDistr", seriesEntity "Распределение времени транспортировки палеты" (return (unbox transportTimeDistr) :: Dynamics [Double]))
+    ]

@@ -5,6 +5,7 @@ module Stand(
   ) where
 
 import Computer
+import Parameters
 import Control.Monad.Trans
 
 import Simulation.Aivika.Dynamics
@@ -37,11 +38,11 @@ stand station distr = do
 standOne :: FCFSQueue Computer -> Simulation Stand
 standOne station =
   stand station $ \comp -> case comp of
-    ComputerType1 -> liftIO $ exprnd (1.0 / 7.0)
-    ComputerType2 -> liftIO $ exprnd (1.0 / 10.0)
+    ComputerType1 -> liftIO $ exprnd (1.0 / computer1Stand1Time)
+    ComputerType2 -> liftIO $ exprnd (1.0 / computer2Stand1Time)
 
 standTwo :: FCFSQueue Computer -> Simulation Stand
 standTwo station =
   stand station $ \comp -> case comp of
-    ComputerType1 ->  undefined
-    ComputerType2 -> liftIO $ exprnd (1.0 / 6.0)
+    ComputerType1 -> liftIO $ exprnd (1.0 / computer1Stand2Time)
+    ComputerType2 -> liftIO $ exprnd (1.0 / computer2Stand2Time)

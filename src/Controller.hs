@@ -5,6 +5,7 @@ module Controller(
 
 import Computer
 import Util
+import Parameters 
 import Control.Monad.Trans
 
 import Simulation.Aivika.Simulation
@@ -25,9 +26,9 @@ controller fixQueue packQueue stationQueue = do
   workTimeRef <- newRef 0.0
   return $ Controller workTimeRef $ forever $ do
     comp <- dequeue stationQueue
-    checkTime <- liftIO $ uniform 6 12
+    checkTime <- liftIO $ uncurry uniform controllerTimeDistr
     holdProcess checkTime
-    randomChoice 0.85
+    randomChoice controllerSuccessRate
       (enqueue packQueue comp)
       (enqueue fixQueue comp) 
     liftEvent $ modifyRef workTimeRef (+ checkTime)
